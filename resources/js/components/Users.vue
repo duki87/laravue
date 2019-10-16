@@ -22,19 +22,22 @@
                     <th>Name</th>
                     <th>Email</th>
                     <th>Type</th>
+                    <th>Date Joined</th>
                     <th>Modify</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>175</td>
-                    <td>Mike Doe</td>
-                    <td>11-7-2014</td>
-                    <td><span class="tag tag-danger">Denied</span></td>
+
+                  <tr v-for="user in users" :key="user.id">
+                    <td>{{user.id}}</td>
+                    <td>{{user.name}}</td>
+                    <td>{{user.email}}</td>
+                    <td>{{user.type | uptext}}</td>
+                    <td>{{user.created_at | formatDate}}</td>
                     <td>
                       <a href="#"><i class="fa fa-edit text-blue"></i> Edit</a>
                       &nbsp;
-                      <a href="#"><i class="fa fa-trash text-red"></i> Delete</a>
+                      <a @click="deleteUser(user.id)" href="#"><i class="fa fa-trash text-red"></i> Delete</a>
                     </td>
                   </tr>
                 </tbody>
@@ -55,7 +58,7 @@
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>
-            <form @submit.prevent="createUser">
+            <form @submit.prevent="createUser" id="createUser">
               <div class="modal-body">
                 <div class="form-group">
                   <input v-model="form.name" type="text" name="name" id="name"
@@ -109,6 +112,7 @@
     export default {
         data() {
           return {
+            users: {},
             form: new Form({
               name: '',
               email: '',
@@ -121,9 +125,57 @@
         },
         methods: {
           createUser() {
+              this.$Progress.start();
               this.form.post('/api/user')
-                .then(({ data }) => { console.log(data) })
-            }
+                .then(() => {
+                    Fire.$emit('AfterCreate');
+                    Fire.$emit('resetForm');
+                    $('#userModal').modal('hide');
+                    Toast.fire({
+                      type: 'success',
+                      title: 'User Created successfully'
+                    });
+                    this.$Progress.finish();
+                  }
+                ).catch(e => {console.log(e)});
+            },
+          loadUsers() {
+              axios.get('api/user').then(({data}) => this.users = data.data);
+          },
+          deleteUser(userId) {
+            Swal.fire({
+              title: 'Are you sure to delete this user?',
+              text: "You won't be able to revert this!",
+              type: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#3085d6',
+              cancelButtonColor: '#d33',
+              confirmButtonText: 'Yes, delete it!'
+              }).then((result) => {
+                if(result.value) {
+                  this.form.delete('api/user/'+userId)
+                    .then(() => {
+                      Swal.fire(
+                        'Deleted!',
+                        'User has been deleted.',
+                        'success'
+                      );
+                      Fire.$emit('AfterCreate');                    
+                  }).catch(
+                    Swal('Failed', 'There was an error.', 'warning');
+                  );
+                }
+            });
+          }
+        },
+        created() {
+            this.loadUsers();
+            Fire.$on('AfterCreate', () => {
+              this.loadUsers();
+            });
+            Fire.$on('resetForm', () => {
+              $('#createUser').trigger('reset');
+            });
         },
         mounted() {
             console.log('Component mounted.')
