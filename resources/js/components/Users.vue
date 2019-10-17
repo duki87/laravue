@@ -7,7 +7,7 @@
               <h3 class="card-title">Users Table</h3>
 
               <div class="card-tools">
-                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#userModal">
+                <button @click="addModal" type="button" class="btn btn-primary">
                   <i class="fas fa-user-plus"></i>
                   Add User
                 </button>
@@ -35,7 +35,7 @@
                     <td>{{user.type | uptext}}</td>
                     <td>{{user.created_at | formatDate}}</td>
                     <td>
-                      <a href="#"><i class="fa fa-edit text-blue"></i> Edit</a>
+                      <a @click="editModal(user)" href="#"><i class="fa fa-edit text-blue"></i> Edit</a>
                       &nbsp;
                       <a @click="deleteUser(user.id)" href="#"><i class="fa fa-trash text-red"></i> Delete</a>
                     </td>
@@ -53,12 +53,21 @@
         <div class="modal-dialog" role="document">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="userModalLabel"><i class="fas fa-user-plus"></i> Add New User</h5>
+              <h5 class="modal-title" id="userModalLabel">
+              <span v-show="!editUserMode">
+                <i class="fas fa-user-plus"></i>
+                Add New User
+              </span>
+              <span v-show="editUserMode">
+                <i class="fas fa-user-edit"></i>
+                Edit User
+              </span>
+              </h5>
               <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>
-            <form @submit.prevent="createUser" id="createUser">
+            <form @submit.prevent="editUserMode ? updateUser() : createUser()" id="createUser">
               <div class="modal-body">
                 <div class="form-group">
                   <input v-model="form.name" type="text" name="name" id="name"
@@ -98,7 +107,8 @@
 
               </div>
               <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Create</button>
+                <button v-show="!editUserMode" type="submit" class="btn btn-primary">Create</button>
+                <button v-show="editUserMode" type="submit" class="btn btn-success">Update</button>
                 <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
               </div>
             </form>
@@ -112,6 +122,7 @@
     export default {
         data() {
           return {
+            editUserMode: false,
             users: {},
             form: new Form({
               name: '',
@@ -160,13 +171,29 @@
                         'User has been deleted.',
                         'success'
                       );
-                      Fire.$emit('AfterCreate');                    
+                      Fire.$emit('AfterCreate');
                   }).catch(
-                    Swal('Failed', 'There was an error.', 'warning');
+                    Swal('Failed', 'There was an error.', 'warning')
                   );
                 }
-            });
-          }
+            }).catch(
+              console.log('error')
+            )
+          },
+          updateUser() {
+            console.log('update')
+          },
+          editModal(userData) {
+             this.editUserMode = true;
+             this.form.reset();
+             this.form.fill(userData);
+             $('#userModal').modal('show');
+          },
+          addModal() {
+             this.editUserMode = false;
+             this.form.reset();
+             $('#userModal').modal('show');
+          },
         },
         created() {
             this.loadUsers();
