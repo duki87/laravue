@@ -11,6 +11,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" href="{{asset('img/reading.png')}}" type="image/png">
+    <script> window.laravel = { csrfToken: '{{ csrf_token() }}' } </script>
     <title>Bookstore</title>
 
     <!-- Font Awesome Icons -->
@@ -111,6 +112,16 @@ scratch. This page gets rid of all links and provides the needed markup only.
                     </p>
                   </router-link>
                 </li>
+                @can('isAdmin')
+                <li class="nav-item">
+                  <router-link to="/developer" class="nav-link" tag="a" active-class="active" exact>
+                    <i class="nav-icon fas fa-cogs text-teal"></i>
+                    <p>
+                      Developer
+                    </p>
+                  </router-link>
+                </li>
+                @endcan
                 <li class="nav-item">
                   <a class="nav-link" href="{{ route('logout') }}"
                      onclick="event.preventDefault();

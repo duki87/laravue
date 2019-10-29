@@ -125,6 +125,7 @@
             editUserMode: false,
             users: {},
             form: new Form({
+              id: '',
               name: '',
               email: '',
               password: '',
@@ -149,7 +150,7 @@
                     this.$Progress.finish();
                   }
                 ).catch(e => {console.log(e)});
-            },
+          },
           loadUsers() {
               axios.get('api/user').then(({data}) => this.users = data.data);
           },
@@ -173,7 +174,13 @@
                       );
                       Fire.$emit('AfterCreate');
                   }).catch(
-                    Swal('Failed', 'There was an error.', 'warning')
+                    () => {
+                      Swal.fire({
+                        type: 'error',
+                        title: 'Error',
+                        text: 'There was an error!'
+                      })
+                    }
                   );
                 }
             }).catch(
@@ -181,7 +188,19 @@
             )
           },
           updateUser() {
-            console.log('update')
+            this.$Progress.start();
+            this.form.put('api/user/'+this.form.id)
+              .then((res) => {
+                this.$Progress.finish();
+                $('#userModal').modal('hide');
+                Swal.fire(
+                  'User Updated!',
+                  'User data has been updated.',
+                  'success'
+                );
+                Fire.$emit('AfterCreate');
+              })
+              .catch(() => {this.$Progress.fail();});
           },
           editModal(userData) {
              this.editUserMode = true;

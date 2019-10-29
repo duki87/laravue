@@ -55,6 +55,16 @@ return [
             'visibility' => 'public',
         ],
 
+        'profile_photos' => [
+            'driver' => 'local',
+            'root'   => storage_path('app/public/profile_photos'),
+        ],
+        //Delete after testing
+        'profile_images' => [
+          'driver' => 'local',
+          'root'   => public_path() . '/img/profile_photos/',
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

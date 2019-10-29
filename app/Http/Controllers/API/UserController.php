@@ -5,10 +5,17 @@ namespace App\Http\Controllers\API;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\User;
+use Storage;
 use Illuminate\Support\Facades\Hash;
+use Image;
 
 class UserController extends Controller
 {
+
+    public function __construct()
+    {
+      $this->middleware('auth:api');
+    }
 
     public function index()
     {
@@ -40,16 +47,73 @@ class UserController extends Controller
 
     public function update(Request $request, $id)
     {
-        //
+        if($this->authorize('isAdmin')) {
+          $user = User::where(['id' => $id])->first();
+          $this->validate($request, [
+            'name'  =>  'required|string|max:191',
+            'email'  =>  'required|string|email|max:191|unique:users,email,'.$user->id,
+            'password'  =>  'sometimes|min:6',
+            'type'  =>  'required'
+          ]);
+          $user->update($request->all());
+          return ['message' => 'User updated.'];
+        }
+        return false;
     }
 
     public function destroy($id)
     {
-        $user = User::where(['id' => $id])->first();
-        if($user) {
-          $user->delete();
-          return ['message' => 'User deleted.'];
+        if($this->authorize('isAdmin')) {
+          $user = User::where(['id' => $id])->first();
+          if($user) {
+            $user->delete();
+            return ['message' => 'User deleted.'];
+          }
         }
         return false;
+    }
+
+    public function profile()
+    {
+        return auth('api')->user();
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = auth('api')->user();
+        $this->validate($request, [
+          'name'  =>  'required|string|max:191',
+          'email'  =>  'required|string|email|max:191|unique:users,email,'.$user->id,
+          'password'  =>  'sometimes|min:6'
+        ]);
+        if($request->photo && $request->photo != $user->photo) {
+          $data = $request->photo;
+          if(preg_match('/^data:image\/(\w+);base64,/', $data, $type)) {
+              $data = substr($data, strpos($data, ',') + 1);
+              $type = strtolower($type[1]); // jpg, png, gif
+              if (!in_array($type, [ 'jpg', 'jpeg', 'gif', 'png' ])) {
+                  throw new \Exception('invalid image type');
+              }
+              $data = base64_decode($data);
+              if($data === false) {
+                  throw new \Exception('base64_decode failed');
+              }
+          } else {
+              throw new \Exception('did not match data URI with image data');
+          }
+          $name = md5(uniqid() . microtime()).'.'.$type;
+          //file_put_contents("$name.{$type}", $data);
+          if($request->photo != $user->photo) {
+            Storage::disk('profile_images')->delete($user->photo);
+          }
+          Storage::disk('profile_images')->put($name, $data);
+          $request->merge(['photo' => $name]);
+        }
+        if(!Hash::check($request->password, $user->password)) {
+            $request->merge(['password' => Hash::make($request['password'])]);
+        }
+        $user->update($request->all());
+
+        return ['message' => 'success'];
     }
 }
