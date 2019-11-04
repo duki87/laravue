@@ -14,6 +14,10 @@ import moment from 'moment';
 import VueProgressBar from 'vue-progressbar';
 import Swal from 'sweetalert2';
 
+//Import frontend auth
+import Gate from './Gate';
+Vue.prototype.$Gate = new Gate(window.user);
+
 //sweetalert setup
 window.Swal = Swal;
 const Toast = Swal.mixin({
@@ -49,13 +53,16 @@ const options = {
 Vue.use(VueProgressBar, options);
 
 Vue.use(VueRouter);
+//Vue.prototype.$Router = new VueRouter();
 
 //set up routes
 const routes = [
   { path: '/dashboard', component: require('./components/Dashboard.vue').default },
   { path: '/profile', component: require('./components/Profile.vue').default },
   { path: '/users', component: require('./components/Users.vue').default },
-  { path: '/developer', component: require('./components/Developer.vue').default }
+  { path: '/developer', component: require('./components/Developer.vue').default },
+  { path: '/invoice', component: require('./components/Invoice.vue').default },
+  { path: '*', component: require('./components/404.vue').default }
 ];
 
 Vue.filter('uptext', (text) => {
@@ -81,6 +88,12 @@ const router = new VueRouter({
 // const files = require.context('./', true, /\.vue$/i);
 // files.keys().map(key => Vue.component(key.split('/').pop().split('.')[0], files(key).default));
 
+//Not found component
+Vue.component(
+    'not-found',
+    require('./components/404.vue').default
+);
+
 Vue.component('example-component', require('./components/ExampleComponent.vue').default);
 
 Vue.component(
@@ -98,6 +111,9 @@ Vue.component(
     require('./components/passport/PersonalAccessTokens.vue').default
 );
 
+//Pagination component
+Vue.component('pagination', require('laravel-vue-pagination'));
+
 /**
  * Next, we will create a fresh Vue application instance and attach it to
  * the page. Then, you may begin adding components to this application
@@ -107,5 +123,17 @@ Vue.component(
 const app = new Vue({
     el: '#app',
     router,
+    data: {
+      search: ''
+    },
+    methods: {
+      searchIt: _.debounce(() => {
+        Fire.$emit('searching');
+      }, 800),
+
+      // printIt() {
+      //   window.print();
+      // }
+    }
     //render: (h) => h(App)
 });

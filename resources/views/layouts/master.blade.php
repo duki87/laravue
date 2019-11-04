@@ -29,16 +29,16 @@ scratch. This page gets rid of all links and provides the needed markup only.
           </li>
         </ul>
         <!-- SEARCH FORM -->
-        <form class="form-inline ml-3">
+        <!-- <form class="form-inline ml-3"> -->
           <div class="input-group input-group-sm">
-            <input class="form-control form-control-navbar" type="search" placeholder="Search" aria-label="Search">
+            <input v-model="search" @keyup="searchIt" class="form-control form-control-navbar" type="search" placeholder="Search" aria-label="Search">
             <div class="input-group-append">
-              <button class="btn btn-navbar" type="submit">
+              <button class="btn btn-navbar" type="submit" @click="searchIt">
                 <i class="fas fa-search"></i>
               </button>
             </div>
           </div>
-        </form>
+        <!-- </form> -->
 
       </nav>
       <!-- /.navbar -->
@@ -61,7 +61,8 @@ scratch. This page gets rid of all links and provides the needed markup only.
             </div>
             <div class="info">
               <a href="#" class="d-block">
-                {{Auth::user()->name}}
+                <strong>{{Auth::user()->name}}</strong>
+                <p>{{Auth::user()->type}}</p>
               </a>
             </div>
           </div>
@@ -79,6 +80,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
                    </p>
                  </router-link>
                </li>
+               @can('isAdmin')
                 <li class="nav-item has-treeview">
                   <a href="#" class="nav-link">
                     <i class="nav-icon fas fa-cog text-teal"></i>
@@ -97,13 +99,16 @@ scratch. This page gets rid of all links and provides the needed markup only.
                       </router-link>
                     </li>
                     <li class="nav-item">
-                      <a href="#" class="nav-link">
-                        <i class="fas fa-circle nav-icon"></i>
-                        <p>Inactive Page</p>
-                      </a>
+                      <router-link to="/invoice" class="nav-link" tag="a" active-class="active" exact>
+                        <i class="nav-icon fas fa-users text-teal"></i>
+                        <p>
+                          Invoice
+                        </p>
+                      </router-link>
                     </li>
                   </ul>
                 </li>
+                @endcan
                 <li class="nav-item">
                   <router-link to="/profile" class="nav-link" tag="a" active-class="active" exact>
                     <i class="nav-icon fas fa-user text-teal"></i>
@@ -168,6 +173,12 @@ scratch. This page gets rid of all links and provides the needed markup only.
       </footer>
     </div>
     <!-- ./wrapper -->
+
+    @auth
+      <script type="text/javascript">
+        window.user = @json(auth()->user());
+      </script>
+    @endauth
 
     <!-- REQUIRED SCRIPTS -->
     <script type="text/javascript" src="/js/app.js"></script>

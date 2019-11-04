@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Gate;
 use App\User;
 use Storage;
 use Illuminate\Support\Facades\Hash;
@@ -19,7 +20,9 @@ class UserController extends Controller
 
     public function index()
     {
-        return User::orderBy('created_at', 'desc')->paginate(10);
+        if(Gate::allows('isAdmin') || Gate::allows('isAuthor')) {
+          return User::orderBy('created_at', 'desc')->paginate(10);
+        }
     }
 
     public function store(Request $request)
@@ -55,6 +58,9 @@ class UserController extends Controller
             'password'  =>  'sometimes|min:6',
             'type'  =>  'required'
           ]);
+          if(!Hash::check($request->password, $user->password)) {
+              $request->merge(['password' => Hash::make($request['password'])]);
+          }
           $user->update($request->all());
           return ['message' => 'User updated.'];
         }
@@ -115,5 +121,31 @@ class UserController extends Controller
         $user->update($request->all());
 
         return ['message' => 'success'];
+    }
+
+    public function search()
+    {
+      $users = [];
+      if($input = \Request::get('keywords')) {
+      //if($input = \Request::get('keywords')) {
+        // $users = User::where('name', 'LIKE', "%$search%")
+        //                ->orWhere('email', 'LIKE', "%$search%")
+        //                ->orWhere('type', 'LIKE', "%$search%")
+        //                ->paginate(10);
+        //                return $users;
+        $users = User::where(function($query) use ($input) {
+          $query->where('name', 'LIKE', "%$input%")
+                ->orWhere('email', 'like', "%$input%")
+                ->orWhere('type', 'like', "%$input%");
+        })->paginate(10);
+      } else {
+        $users = User::orderBy('created_at', 'desc')->paginate(10);
+      }
+      return $users;
+    }
+
+    public function invoice()
+    {
+
     }
 }

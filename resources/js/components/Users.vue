@@ -1,6 +1,6 @@
 <template>
     <div class="container">
-      <div class="row">
+      <div class="row" v-if="$Gate.isAdminOrAuthor()">
         <div class="col-12">
           <div class="card">
             <div class="card-header">
@@ -28,7 +28,7 @@
                 </thead>
                 <tbody>
 
-                  <tr v-for="user in users" :key="user.id">
+                  <tr v-for="user in users.data" :key="user.id">
                     <td>{{user.id}}</td>
                     <td>{{user.name}}</td>
                     <td>{{user.email}}</td>
@@ -44,9 +44,17 @@
               </table>
             </div>
             <!-- /.card-body -->
+            <div class="card-footer">
+              <pagination :data="users" @pagination-change-page="getResults"></pagination>
+            </div>
           </div>
           <!-- /.card -->
         </div>
+
+      </div>
+
+      <div v-if="!$Gate.isAdminOrAuthor()">
+        <not-found></not-found>
       </div>
       <!-- Modal -->
       <div class="modal fade" id="userModal" tabindex="-1" role="dialog" aria-labelledby="userModalLabel" aria-hidden="true">
@@ -152,8 +160,20 @@
                 ).catch(e => {console.log(e)});
           },
           loadUsers() {
-              axios.get('api/user').then(({data}) => this.users = data.data);
+              if(this.$Gate.isAdminOrAuthor()) {
+                axios.get('api/user').then(({data}) => this.users = data);
+              }
+              //this.$router.go(-1);
           },
+
+          getResults(page = 1) {
+            axios.get('api/user?page=' + page)
+            .then(response => {
+              //let usersObj = Object.assign({}, this.users);
+              this.users = response.data;
+            });
+          },
+
           deleteUser(userId) {
             Swal.fire({
               title: 'Are you sure to delete this user?',
@@ -221,6 +241,22 @@
             });
             Fire.$on('resetForm', () => {
               $('#createUser').trigger('reset');
+            });
+            Fire.$on('searching', () => {
+              let keywords = this.$parent.search;
+              //console.log(keywords);
+              axios.get('api/findUser?keywords=' + keywords)
+              .then((res) => {
+                this.users = res.data
+                ;
+              })
+              .catch(() => {
+                Swal.fire({
+                  type: 'error',
+                  title: 'Error',
+                  text: 'There was an error!'
+                })
+              })
             });
         },
         mounted() {
